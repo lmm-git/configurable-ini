@@ -24,7 +24,7 @@ Consider an ini-file `config.ini` that looks like this:
 You can read, manipulate and write the ini-file like so:
 
     var fs = require('fs')
-      , ini = require('ini')
+      , ini = require('configurable-ini')
 
     var config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'))
 
