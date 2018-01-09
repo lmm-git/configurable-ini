@@ -5,6 +5,8 @@ exports.stringify = exports.encode = encode
 exports.safe = safe
 exports.unsafe = unsafe
 
+const DEFAULT_COMMENT_DELIMITERS = [';', '#']
+
 var eol = typeof process !== 'undefined' &&
   process.platform === 'win32' ? '\r\n' : '\n'
 
@@ -15,11 +17,13 @@ function encode (obj, opt) {
   if (typeof opt === 'string') {
     opt = {
       section: opt,
-      whitespace: false
+      whitespace: false,
+      commentDelimiters: DEFAULT_COMMENT_DELIMITERS
     }
   } else {
     opt = opt || {}
     opt.whitespace = opt.whitespace === true
+    opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
   }
 
   var separator = opt.whitespace ? ' = ' : '='
@@ -28,17 +32,17 @@ function encode (obj, opt) {
     var val = obj[k]
     if (val && Array.isArray(val)) {
       val.forEach(function (item) {
-        out += safe(k + '[]') + separator + safe(item) + '\n'
+        out += safe(k + '[]', opt) + separator + safe(item, opt) + '\n'
       })
     } else if (val && typeof val === 'object') {
       children.push(k)
     } else {
-      out += safe(k) + separator + safe(val) + eol
+      out += safe(k, opt) + separator + safe(val, opt) + eol
     }
   })
 
   if (opt.section && out.length) {
-    out = '[' + safe(opt.section) + ']' + eol + out
+    out = '[' + safe(opt.section, opt) + ']' + eol + out
   }
 
   children.forEach(function (k, _, __) {
@@ -46,7 +50,8 @@ function encode (obj, opt) {
     var section = (opt.section ? opt.section + '.' : '') + nk
     var child = encode(obj[k], {
       section: section,
-      whitespace: opt.whitespace
+      whitespace: opt.whitespace,
+      commentDelimiters: opt.commentDelimiters
     })
     if (out.length && child.length) {
       out += eol
@@ -66,7 +71,9 @@ function dotSplit (str) {
     })
 }
 
-function decode (str) {
+function decode (str, opt) {
+  opt = opt || {}
+  opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
   var out = {}
   var p = out
   var section = null
@@ -75,16 +82,16 @@ function decode (str) {
   var lines = str.split(/[\r\n]+/g)
 
   lines.forEach(function (line, _, __) {
-    if (!line || line.match(/^\s*[;#]/)) return
+    if (!line || line.match('^\\s*[' + opt.commentDelimiters.join('') + ']')) return
     var match = line.match(re)
     if (!match) return
     if (match[1] !== undefined) {
-      section = unsafe(match[1])
+      section = unsafe(match[1], opt)
       p = out[section] = out[section] || {}
       return
     }
-    var key = unsafe(match[2])
-    var value = match[3] ? unsafe(match[4]) : true
+    var key = unsafe(match[2], opt)
+    var value = match[3] ? unsafe(match[4], opt) : true
     switch (value) {
       case 'true':
       case 'false':
@@ -145,7 +152,16 @@ function isQuoted (val) {
     (val.charAt(0) === "'" && val.slice(-1) === "'")
 }
 
-function safe (val) {
+function safe (val, opt) {
+  function replaceCommentDelimiters (val, delimList) {
+    for (const delimKey in delimList) {
+      val = val.replace(new RegExp(delimList[delimKey], 'g'), '\\' + delimList[delimKey])
+    }
+    return val
+  }
+
+  opt = opt || {}
+  opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
   return (typeof val !== 'string' ||
     val.match(/[=\r\n]/) ||
     val.match(/^\[/) ||
@@ -153,10 +169,12 @@ function safe (val) {
      isQuoted(val)) ||
     val !== val.trim())
       ? JSON.stringify(val)
-      : val.replace(/;/g, '\\;').replace(/#/g, '\\#')
+      : replaceCommentDelimiters(val, opt.commentDelimiters)
 }
 
-function unsafe (val, doUnesc) {
+function unsafe (val, opt) {
+  opt = opt || {}
+  opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
   val = (val || '').trim()
   if (isQuoted(val)) {
     // remove the single quotes before calling JSON.parse
@@ -171,13 +189,13 @@ function unsafe (val, doUnesc) {
     for (var i = 0, l = val.length; i < l; i++) {
       var c = val.charAt(i)
       if (esc) {
-        if ('\\;#'.indexOf(c) !== -1) {
+        if (('\\' + opt.commentDelimiters.join('')).indexOf(c) !== -1) {
           unesc += c
         } else {
           unesc += '\\' + c
         }
         esc = false
-      } else if (';#'.indexOf(c) !== -1) {
+      } else if (opt.commentDelimiters.join('').indexOf(c) !== -1) {
         break
       } else if (c === '\\') {
         esc = true
