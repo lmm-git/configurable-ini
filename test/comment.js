@@ -26,6 +26,16 @@ test("decode from file, without hashtag delimiter", function (t) {
   t.end()
 })
 
+test("decode from file, with hashtag delimiter without in data comments", function (t) {
+  var d = i.decode(data, { 'dataComments': false })
+  t.deepEqual(d, {
+    'awesome': {
+      'test01': 'thisIsDelimited#Proceed'
+    }
+  })
+  t.end()
+})
+
 test("encode from data, without hashtag delimiter", function (t) {
   const testData = {
     'awesome': {
@@ -36,6 +46,19 @@ test("encode from data, without hashtag delimiter", function (t) {
   const encoded = i.encode(testData, { 'commentDelimiters': [';'] })
   t.equal(encoded, "[awesome]\n" +
     "test=this is \\; a test # string\n")
+  t.end()
+})
+
+test("encode from data, without data comments", function (t) {
+  const testData = {
+    'awesome': {
+      'test': 'this is ; a test # string'
+    }
+  }
+
+  const encoded = i.encode(testData, { 'dataComments': false })
+  t.equal(encoded, "[awesome]\n" +
+    "test=this is ; a test # string\n")
   t.end()
 })
 

@@ -63,6 +63,7 @@ The `options` object may contain the following:
 
 * `commentDelimiters` A list of delimiters which can start a comment,
   defaulting to `[';', '#']`
+* `dataComment` Whether or not to support comments in values like `data#thisIsAComment`. `false` does not check for comments.
 
 ### parse(inistring, opt)
 
@@ -85,6 +86,7 @@ The `options` object may contain the following:
   find that it's more human-readable and pretty with the whitespace.
 * `commentDelimiters` A list of delimiters which can start a comment,
   defaulting to `[';', '#']`
+* `dataComment` Whether or not to support comments in values like `data#thisIsAComment`. `false` does not check for comments.
 
 For backwards compatibility reasons, if a `string` options is passed
 in, then it is assumed to be the `section` value.
@@ -108,6 +110,7 @@ The `options` object may contain the following:
 
 * `commentDelimiters` A list of delimiters which can start a comment,
   defaulting to `[';', '#']`
+* `dataComment` Whether or not to support comments in values like `data#thisIsAComment`. `false` does not check for comments.
 
 ### unsafe(val, [options])
 
@@ -117,3 +120,4 @@ The `options` object may contain the following:
 
 * `commentDelimiters` A list of delimiters which can start a comment,
   defaulting to `[';', '#']`
+* `dataComment` Whether or not to support comments in values like `data#thisIsAComment`. `false` does not check for comments.

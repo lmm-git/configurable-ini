@@ -33,6 +33,7 @@ var i = require("../")
             + '[x\\.y\\.z.a\\.b\\.c]\na.b.c=abc\n'
             + 'nocomment=this\\; this is not a comment\n'
             + 'noHashComment=this\\# this is not a comment\n'
+            + 'hashComment=this is\n'
   , expectD =
     { o: 'p',
       'a with spaces': 'b  c',
@@ -57,7 +58,8 @@ var i = require("../")
         'a.b.c': {
           'a.b.c': 'abc',
           'nocomment': 'this\; this is not a comment',
-          noHashComment: 'this\# this is not a comment'
+          noHashComment: 'this\# this is not a comment',
+          hashComment: 'this is'
         }
       }
     }

@@ -18,12 +18,14 @@ function encode (obj, opt) {
     opt = {
       section: opt,
       whitespace: false,
-      commentDelimiters: DEFAULT_COMMENT_DELIMITERS
+      commentDelimiters: DEFAULT_COMMENT_DELIMITERS,
+      dataComments: true
     }
   } else {
     opt = opt || {}
     opt.whitespace = opt.whitespace === true
     opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
+    opt.dataComments = !(opt.dataComments === false)
   }
 
   var separator = opt.whitespace ? ' = ' : '='
@@ -51,7 +53,8 @@ function encode (obj, opt) {
     var child = encode(obj[k], {
       section: section,
       whitespace: opt.whitespace,
-      commentDelimiters: opt.commentDelimiters
+      commentDelimiters: opt.commentDelimiters,
+      dataComments: opt.dataComments
     })
     if (out.length && child.length) {
       out += eol
@@ -74,6 +77,7 @@ function dotSplit (str) {
 function decode (str, opt) {
   opt = opt || {}
   opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
+  opt.dataComments = !(opt.dataComments === false)
   var out = {}
   var p = out
   var section = null
@@ -162,6 +166,7 @@ function safe (val, opt) {
 
   opt = opt || {}
   opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
+  opt.dataComments = !(opt.dataComments === false)
   return (typeof val !== 'string' ||
     val.match(/[=\r\n]/) ||
     val.match(/^\[/) ||
@@ -169,12 +174,13 @@ function safe (val, opt) {
      isQuoted(val)) ||
     val !== val.trim())
       ? JSON.stringify(val)
-      : replaceCommentDelimiters(val, opt.commentDelimiters)
+      : (opt.dataComments ? replaceCommentDelimiters(val, opt.commentDelimiters) : val)
 }
 
 function unsafe (val, opt) {
   opt = opt || {}
   opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
+  opt.dataComments = !(opt.dataComments === false)
   val = (val || '').trim()
   if (isQuoted(val)) {
     // remove the single quotes before calling JSON.parse
@@ -195,7 +201,7 @@ function unsafe (val, opt) {
           unesc += '\\' + c
         }
         esc = false
-      } else if (opt.commentDelimiters.join('').indexOf(c) !== -1) {
+      } else if (opt.dataComments && opt.commentDelimiters.join('').indexOf(c) !== -1) {
         break
       } else if (c === '\\') {
         esc = true
