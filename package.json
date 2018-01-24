@@ -12,8 +12,7 @@
     "pretest": "standard ini.js",
     "test": "tap test/*.js --100 -J",
     "preversion": "npm test",
-    "postversion": "npm publish",
-    "postpublish": "git push origin --all; git push origin --tags"
+    "postversion": "npm publish"
   },
   "engines": {
     "node": "*"
