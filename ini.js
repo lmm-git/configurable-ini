@@ -78,20 +78,38 @@ function decode (str, opt) {
   opt = opt || {}
   opt.commentDelimiters = opt.commentDelimiters || DEFAULT_COMMENT_DELIMITERS
   opt.dataComments = !(opt.dataComments === false)
+  opt.filterComment = opt.filterComment || null
   var out = {}
-  var p = out
   var section = null
   //          section     |key      = value
   var re = /^\[([^\]]*)\]$|^([^=]+)(=(.*))?$/i
   var lines = str.split(/[\r\n]+/g)
+  var filterCommentFound = false
+  var filterCommentSectionActive = false
 
   lines.forEach(function (line, _, __) {
-    if (!line || line.match('^\\s*[' + opt.commentDelimiters.join('') + ']')) return
+    if (!line) {
+      return
+    }
+
+    if (line.match('^\\s*[' + opt.commentDelimiters.join('') + ']')) {
+      if (opt.filterComment !== null) {
+        if (line.match('^\\s*[' + opt.commentDelimiters.join('') + '] (.*)$')[1] === opt.filterComment) {
+          filterCommentFound = true
+        }
+      }
+      return
+    }
     var match = line.match(re)
     if (!match) return
     if (match[1] !== undefined) {
+      if (filterCommentFound) {
+        filterCommentSectionActive = true
+        filterCommentFound = false
+      } else {
+        filterCommentSectionActive = false
+      }
       section = unsafe(match[1], opt)
-      p = out[section] = out[section] || {}
       return
     }
     var key = unsafe(match[2], opt)
@@ -102,22 +120,37 @@ function decode (str, opt) {
       case 'null': value = JSON.parse(value)
     }
 
-    // Convert keys with '[]' suffix to an array
-    if (key.length > 2 && key.slice(-2) === '[]') {
-      key = key.substring(0, key.length - 2)
-      if (!p[key]) {
-        p[key] = []
-      } else if (!Array.isArray(p[key])) {
-        p[key] = [p[key]]
+    if (!opt.filterComment || (filterCommentSectionActive || filterCommentFound)) {
+      if (!out[section] && section) {
+        out[section] = {}
       }
-    }
 
-    // safeguard against resetting a previously defined
-    // array by accidentally forgetting the brackets
-    if (Array.isArray(p[key])) {
-      p[key].push(value)
-    } else {
-      p[key] = value
+      var parent = null
+      if (section) {
+        parent = out[section]
+      } else {
+        parent = out
+      }
+
+      // Convert keys with '[]' suffix to an array
+      if (key.length > 2 && key.slice(-2) === '[]') {
+        key = key.substring(0, key.length - 2)
+        if (!parent[key]) {
+          parent[key] = []
+        } else if (!Array.isArray(parent[key])) {
+          parent[key] = [parent[key]]
+        }
+      }
+
+      // safeguard against resetting a previously defined
+      // array by accidentally forgetting the brackets
+      if (Array.isArray(parent[key])) {
+        parent[key].push(value)
+      } else {
+        parent[key] = value
+      }
+
+      filterCommentFound = false
     }
   })
 

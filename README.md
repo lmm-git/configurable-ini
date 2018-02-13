@@ -64,6 +64,39 @@ The `options` object may contain the following:
 * `commentDelimiters` A list of delimiters which can start a comment,
   defaulting to `[';', '#']`
 * `dataComment` Whether or not to support comments in values like `data#thisIsAComment`. `false` does not check for comments.
+* `filterComment` To filter values by comment in previous line. Useful for merging ini files.
+
+#### `filterComment` behaviour
+
+Consider the following ini file:
+
+```ini
+[notAtAllImportant]
+    notImportant=yeah1
+    ; IMPORTANT
+    important=yeah2
+
+; some another comment
+; IMPORTANT
+[everythingImportant]
+    notLabeled=yeah3
+
+[absolutelyUnimportant]
+    notInteresting=no
+```
+
+With parameter `filterComment` set to `IMPORTANT` you will get the following result:
+
+```json
+{
+  "notAtAllImportant": {
+    "important": "yeah2"
+  },
+  "everythingImportant": {
+    "notLabeled": "yeah3"
+  }
+}
+```
 
 ### parse(inistring, opt)
 
