@@ -94,7 +94,7 @@ function decode (str, opt) {
 
     if (line.match('^\\s*[' + opt.commentDelimiters.join('') + ']')) {
       if (opt.filterComment !== null) {
-        if (line.match('^\\s*[' + opt.commentDelimiters.join('') + '] (.*)$')[1] === opt.filterComment) {
+        if (line.match('^\\s*[' + opt.commentDelimiters.join('') + '] ?(.*)$')[1] === opt.filterComment) {
           filterCommentFound = true
         }
       }
